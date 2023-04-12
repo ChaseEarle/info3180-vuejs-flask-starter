@@ -1,5 +1,23 @@
 <template>
-  <!-- your form template here -->
+  <div>
+    <!-- Movie form HTML code goes here -->
+    <form id="movieForm" @submit.prevent="saveMovie">
+      <!-- Your form fields here -->
+      <button type="submit">Save Movie</button>
+    </form>
+    
+    <!-- Display success message if successful upload -->
+    <div v-if="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+    
+    <!-- Display error messages if validation fails -->
+    <div v-if="errorMessages.length > 0" class="alert alert-danger">
+      <ul>
+        <li v-for="error in errorMessages" :key="error">{{ error }}</li>
+      </ul>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -8,6 +26,8 @@ import { ref, onMounted } from "vue";
 export default {
   setup() {
     let csrf_token = ref("");
+    let successMessage = ref("");
+    let errorMessages = ref([]);
 
     function getCsrfToken() {
       fetch('/api/v1/csrf-token')
@@ -24,7 +44,7 @@ export default {
 
     function saveMovie() {
       let movieForm = document.getElementById('movieForm');
-      let form_data = new FormData(uploadForm);
+      let form_data = new FormData(movieForm);
       fetch("/api/v1/movies", {
         method: 'POST',
         body: form_data,
@@ -36,16 +56,22 @@ export default {
           return response.json();
         })
         .then(function (data) {
-          // display a success message
-          console.log(data);
+          // Display success message
+          successMessage.value = 'Movie uploaded successfully!';
+          errorMessages.value = []; // Clear error messages
         })
         .catch(function (error) {
           console.log(error);
+          // Display error message
+          errorMessages.value = ['An error occurred. Please try again later.'];
+          successMessage.value = ''; // Clear success message
         });
     }
 
     return {
       csrf_token,
+      successMessage,
+      errorMessages,
       saveMovie
     };
   }
