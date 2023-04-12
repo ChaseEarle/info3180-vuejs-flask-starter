@@ -7,6 +7,8 @@ This file creates your application.
 
 from app import app
 from flask import render_template, request, jsonify, send_file
+from flask import jsonify
+from flask_wtf.csrf import generate_csrf
 import os
 
 
@@ -61,3 +63,47 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return render_template('404.html'), 404
+
+
+@app.route('/api/v1/movies', methods=['POST'])
+def movies():
+    form = MovieForm(request.form)
+
+    if request.method == 'POST' and form.validate():
+        title = form.title.data
+        description = form.description.data
+        poster = request.files['poster']
+
+        # Check if file is allowed
+        if poster and '.' in poster.filename and poster.filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']:
+            # Save the file with a secure filename
+            filename = secure_filename(poster.filename)
+            poster.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            # Save movie details to the database
+            movie = Movie(title=title, description=description, poster=filename)
+            db.session.add(movie)
+            db.session.commit()
+
+            # Return success message and movie details in JSON format
+            return jsonify({
+                'message': 'Movie Successfully added',
+                'title': movie.title,
+                'poster': movie.poster,
+                'description': movie.description
+            })
+
+        else:
+            # Return error message in JSON format if file is not allowed
+            return jsonify({
+                'errors': [{'poster': ['Invalid file type. Allowed file types are: jpg, jpeg, png, gif']}] 
+            })
+
+    else:
+        # Return list of form errors in JSON format
+        return jsonify({'errors': form_errors(form)}), 400  # 400 for Bad Request status code
+    
+
+@app.route('/api/v1/csrf-token', methods=['GET'])
+def get_csrf():
+    return jsonify({'csrf_token': generate_csrf()})

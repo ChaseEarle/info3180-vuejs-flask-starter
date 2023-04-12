@@ -22,12 +22,16 @@
             <li class="nav-item">
               <RouterLink class="nav-link" to="/about">About</RouterLink>
             </li>
+            <li class="nav-item">
+              <RouterLink class="nav-link" to="/add-movie">Add Movie</RouterLink>
+            </li>
           </ul>
         </div>
       </div>
     </nav>
   </header>
 </template>
+
 
 <script setup>
 import { RouterLink } from "vue-router";
